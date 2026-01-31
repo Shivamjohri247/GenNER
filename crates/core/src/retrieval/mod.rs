@@ -3,7 +3,9 @@
 pub mod store;
 pub mod knn;
 pub mod strategy;
+pub mod hnsw;
 
 pub use store::*;
 pub use knn::*;
 pub use strategy::*;
+pub use hnsw::*;

@@ -38,6 +38,7 @@ impl EntityParser {
         let suffix = &self.suffix;
 
         // First, find all marked entities
+        // We store: (start_of_prefix, end_of_entity_text, entity_text)
         let mut marked_spans = Vec::new();
         let mut pos = 0;
 
@@ -51,7 +52,7 @@ impl EntityParser {
                     let entity_text = marked_text[after_prefix..actual_end].to_string();
                     let end_of_marker = actual_end + suffix.len();
 
-                    marked_spans.push((actual_start, end_of_marker, entity_text));
+                    marked_spans.push((actual_start, actual_end, entity_text));
                     pos = end_of_marker;
                 } else {
                     // Mismatched markers
@@ -65,10 +66,14 @@ impl EntityParser {
         }
 
         // Calculate positions in unmarked text
+        // The offset tracks how many characters we've removed (markers) up to this point
         let mut offset = 0isize;
         for (start, end, text) in &marked_spans {
+            // In unmarked text, the entity starts at the position where prefix starts, minus offset
             let unmarked_start = (*start as isize + offset) as usize;
-            let unmarked_end = (*end as isize + offset) as usize;
+            // In unmarked text, the entity ends at the position where entity text ends, minus offset
+            // But we also need to account for the prefix length before this entity
+            let unmarked_end = (*end as isize + offset - self.prefix.len() as isize) as usize;
 
             entities.push(Entity::new(
                 text.clone(),
@@ -109,7 +114,6 @@ impl EntityParser {
         let suffix = &self.suffix;
 
         let mut pos = 0;
-        let mut original_pos = 0;
 
         while pos < marked.len() {
             // Find next marker
@@ -117,19 +121,22 @@ impl EntityParser {
                 let actual_start = pos + marker_start;
                 let after_prefix = actual_start + prefix.len();
 
-                // Sync original position
-                let chars_before_marker = marked[..actual_start].chars().count();
-                let orig_chars_before_marker = original.chars().take(chars_before_marker).count();
-                original_pos = original.chars().take(orig_chars_before_marker).map(|c| c.len_utf8()).sum();
-
+                // Calculate position in original text before this marker
+                // Count characters before marker start
+                let marked_before = &marked[..actual_start];
+                // Find the entity in original from the current position
                 if let Some(marker_end) = marked[after_prefix..].find(suffix) {
                     let actual_end = after_prefix + marker_end;
                     let entity_text = marked[after_prefix..actual_end].to_string();
                     let end_of_marker = actual_end + suffix.len();
 
-                    // Find entity in original text
-                    if let Some(entity_start) = original[original_pos..].find(&entity_text) {
-                        let start = original_pos + entity_start;
+                    // Find entity in original text by searching forward
+                    // from where we've already processed
+                    let processed_len = marked.len() - marked[actual_start..].len();
+                    let orig_processed = self.find_original_position(original, marked, processed_len);
+
+                    if let Some(entity_start) = original[orig_processed..].find(&entity_text) {
+                        let start = orig_processed + entity_start;
                         let end = start + entity_text.len();
 
                         entities.push(Entity::new(entity_text, label.clone(), start, end));
@@ -147,6 +154,22 @@ impl EntityParser {
         }
 
         Ok(entities)
+    }
+
+    /// Helper to find position in original text corresponding to marked text position
+    fn find_original_position(&self, original: &str, marked: &str, marked_pos: usize) -> usize {
+        // Simple approach: unmark the text and count
+        let unmarked_up_to = self.unmark(&marked[..marked_pos.min(marked.len())]);
+        // Find how many chars of original match
+        let mut result = 0;
+        for (i, c) in unmarked_up_to.chars().enumerate() {
+            if original.chars().nth(i) == Some(c) {
+                result = i + 1;
+            } else {
+                break;
+            }
+        }
+        original.chars().take(result).map(|c| c.len_utf8()).sum()
     }
 
     /// Unmark text - remove entity markers

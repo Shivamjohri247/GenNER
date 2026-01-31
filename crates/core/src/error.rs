@@ -12,6 +12,12 @@ pub enum Device {
     Metal,
 }
 
+impl Default for Device {
+    fn default() -> Self {
+        Self::Cpu
+    }
+}
+
 /// Data type for tensors
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum DType {

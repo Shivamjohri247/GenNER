@@ -8,6 +8,7 @@ pub mod models;
 pub mod ner;
 pub mod training;
 pub mod inference;
+pub mod retrieval;
 
 use error::PythonError;
 
@@ -20,8 +21,12 @@ fn genner_python(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<training::PyLoRAConfig>()?;
     m.add_class::<training::PyTrainingConfig>()?;
     m.add_class::<inference::PyInferenceRunner>()?;
+    m.add_class::<retrieval::PyRetriever>()?;
 
     m.add("GennerError", _py.get_type::<PythonError>())?;
+
+    // Add utility functions
+    m.add_function(pyo3::wrap_pyfunction!(inference::build_ner_prompt, m)?)?;
 
     Ok(())
 }

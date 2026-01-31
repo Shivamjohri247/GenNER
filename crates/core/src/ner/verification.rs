@@ -150,38 +150,100 @@ impl VerificationResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::tokenizer::WhitespaceTokenizer;
+    use std::collections::HashMap;
+
+    // Simple test tokenizer with bidirectional mapping
+    #[derive(Debug, Default)]
+    struct TestTokenizer {
+        token_to_id: HashMap<String, u32>,
+        id_to_token: HashMap<u32, String>,
+        next_id: u32,
+    }
+
+    impl TestTokenizer {
+        fn new() -> Self {
+            let mut token_to_id = HashMap::new();
+            let mut id_to_token = HashMap::new();
+
+            // Add common test tokens
+            token_to_id.insert("yes".to_string(), 1);
+            token_to_id.insert("no".to_string(), 2);
+            token_to_id.insert("unknown".to_string(), 3);
+
+            id_to_token.insert(1, "yes".to_string());
+            id_to_token.insert(2, "no".to_string());
+            id_to_token.insert(3, "unknown".to_string());
+
+            Self {
+                token_to_id,
+                id_to_token,
+                next_id: 4,
+            }
+        }
+    }
+
+    impl crate::traits::tokenizer::TokenizerTrait for TestTokenizer {
+        fn encode(&self, text: &str, _add_special_tokens: bool) -> Result<Vec<u32>> {
+            Ok(text.split_whitespace()
+                .map(|t| *self.token_to_id.get(t).unwrap_or(&3))
+                .collect())
+        }
+
+        fn decode(&self, ids: &[u32], _skip_special_tokens: bool) -> Result<String> {
+            Ok(ids.iter()
+                .map(|id| self.id_to_token.get(id).map(|s| s.as_str()).unwrap_or("unknown"))
+                .collect::<Vec<_>>()
+                .join(" "))
+        }
+
+        fn vocab_size(&self) -> usize {
+            self.next_id as usize
+        }
+
+        fn id_to_token(&self, id: u32) -> Option<String> {
+            self.id_to_token.get(&id).cloned()
+        }
+
+        fn token_to_id(&self, token: &str) -> Option<u32> {
+            self.token_to_id.get(token).copied()
+        }
+    }
 
     // Mock model for testing
     struct MockModel {
         always_yes: bool,
+        tokenizer_ref: TestTokenizer,
     }
 
     impl MockModel {
         fn new(always_yes: bool) -> Self {
-            Self { always_yes }
+            Self {
+                always_yes,
+                tokenizer_ref: TestTokenizer::new(),
+            }
         }
     }
 
     impl ModelBackend for MockModel {
         type Config = ();
-        type Tokenizer = WhitespaceTokenizer;
+        type Tokenizer = TestTokenizer;
 
         fn load(_config: crate::traits::model::ModelConfig) -> Result<Self>
         where
             Self: Sized,
         {
-            Ok(Self { always_yes: true })
+            Ok(Self {
+                always_yes: true,
+                tokenizer_ref: TestTokenizer::new(),
+            })
         }
 
         fn tokenizer(&self) -> &Self::Tokenizer {
-            static TOKENIZER: WhitespaceTokenizer = WhitespaceTokenizer;
-            &TOKENIZER
+            &self.tokenizer_ref
         }
 
         fn tokenizer_mut(&mut self) -> &mut Self::Tokenizer {
-            static mut TOKENIZER: WhitespaceTokenizer = WhitespaceTokenizer;
-            unsafe { &mut TOKENIZER }
+            &mut self.tokenizer_ref
         }
 
         fn generate(
@@ -194,9 +256,9 @@ mod tests {
         ) -> Result<Vec<u32>> {
             // Return token IDs for "yes" or "no"
             if self.always_yes {
-                Ok(vec![Self::hash_token("yes")])
+                Ok(vec![1]) // "yes"
             } else {
-                Ok(vec![Self::hash_token("no")])
+                Ok(vec![2]) // "no"
             }
         }
 
@@ -217,16 +279,6 @@ mod tests {
         }
     }
 
-    impl MockModel {
-        fn hash_token(s: &str) -> u32 {
-            use std::collections::hash_map::DefaultHasher;
-            use std::hash::{Hash, Hasher};
-            let mut h = DefaultHasher::new();
-            s.hash(&mut h);
-            (h.finish() % 100000) as u32
-        }
-    }
-
     #[test]
     fn test_verifier_new() {
         let verifier = SelfVerifier::new();
@@ -238,8 +290,8 @@ mod tests {
     fn test_verification_result_new() {
         let entity = Entity::new("John", "PER", 0, 4);
         let result = VerificationResult::new(entity.clone(), 0.8, "yes".to_string());
-        assert!(!result.verified); // 0.8 >= 0.5, so verified
-        assert!(result.verified);
+        assert!(result.verified); // 0.8 >= 0.5, so verified
+        assert_eq!(result.confidence, 0.8);
     }
 
     #[test]

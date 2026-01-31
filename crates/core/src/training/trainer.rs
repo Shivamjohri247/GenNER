@@ -178,6 +178,19 @@ pub struct TrainingConfig {
 
     /// Output directory for checkpoints
     pub output_dir: String,
+
+    /// Maximum tokens to generate during inference
+    pub max_tokens: usize,
+
+    /// Temperature for generation
+    pub temperature: f32,
+
+    /// Device for training
+    #[serde(skip)]  // Can't serialize Device enum directly
+    pub device: crate::error::Device,
+
+    /// Maximum sequence length
+    pub max_seq_len: usize,
 }
 
 impl TrainingConfig {
@@ -193,6 +206,10 @@ impl TrainingConfig {
             lora: LoRAConfig::default(),
             checkpoint_every: 500,
             output_dir: "outputs".to_string(),
+            max_tokens: 256,
+            temperature: 0.7,
+            device: crate::error::Device::Cpu,
+            max_seq_len: 2048,
         }
     }
 
@@ -223,6 +240,30 @@ impl TrainingConfig {
     /// Set output directory
     pub fn with_output_dir(mut self, dir: impl Into<String>) -> Self {
         self.output_dir = dir.into();
+        self
+    }
+
+    /// Set max tokens
+    pub fn with_max_tokens(mut self, max_tokens: usize) -> Self {
+        self.max_tokens = max_tokens;
+        self
+    }
+
+    /// Set temperature
+    pub fn with_temperature(mut self, temperature: f32) -> Self {
+        self.temperature = temperature;
+        self
+    }
+
+    /// Set device
+    pub fn with_device(mut self, device: crate::error::Device) -> Self {
+        self.device = device;
+        self
+    }
+
+    /// Set max sequence length
+    pub fn with_max_seq_len(mut self, max_seq_len: usize) -> Self {
+        self.max_seq_len = max_seq_len;
         self
     }
 }

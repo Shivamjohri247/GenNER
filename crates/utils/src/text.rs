@@ -68,13 +68,14 @@ mod tests {
     fn test_truncate_smart() {
         assert_eq!(truncate_smart("hello world", 20), "hello world");
         assert_eq!(truncate_smart("hello world", 8), "hello...");
-        assert_eq!(truncate_smart("helloworld", 8), "hellow...");
+        assert_eq!(truncate_smart("helloworld", 8), "hello...");
     }
 
     #[test]
     fn test_estimate_tokens() {
         assert_eq!(estimate_tokens("hello"), 1);
-        assert_eq!(estimate_tokens("hello world test"), 3);
+        // "hello world test" = 17 chars, 17 / 4 = 4
+        assert_eq!(estimate_tokens("hello world test"), 4);
     }
 
     #[test]

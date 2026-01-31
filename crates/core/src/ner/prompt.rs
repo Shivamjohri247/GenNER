@@ -53,8 +53,11 @@ impl Demonstration {
         sorted_entities.sort_by_key(|e| std::cmp::Reverse(e.start));
 
         for entity in &sorted_entities {
+            // When processing right to left, positions in result are still valid
+            // because we haven't modified the left side yet
             if entity.start < result.len() && entity.end <= result.len() {
-                let marked = format!("{}{}{}", prefix, &result[entity.start..entity.end], suffix);
+                let entity_text = &result[entity.start..entity.end];
+                let marked = format!("{}{}{}", prefix, entity_text, suffix);
                 result = format!("{}{}{}", &result[..entity.start], marked, &result[entity.end..]);
             }
         }
@@ -238,7 +241,7 @@ mod tests {
             "John went to Paris",
             vec![
                 Entity::new("John", "PER", 0, 4),
-                Entity::new("Paris", "LOC", 12, 17),
+                Entity::new("Paris", "LOC", 13, 18),  // Paris is at position 13-18
             ],
         );
         assert_eq!(demo.input, "John went to Paris");
@@ -306,7 +309,7 @@ mod tests {
         let builder = PromptBuilder::new();
         let entities = vec![
             Entity::new("John", "PER", 0, 4),
-            Entity::new("Paris", "LOC", 12, 17),
+            Entity::new("Paris", "LOC", 13, 18),  // Paris is at position 13-18
         ];
         let marked = builder.mark_entities("John went to Paris", &entities);
         assert_eq!(marked, "@@John## went to @@Paris##");

@@ -5,7 +5,7 @@ use genner_core::ner::Entity;
 
 /// Convert a Rust entity to a Python dict
 pub fn entity_to_dict(py: Python, entity: &Entity) -> PyResult<PyObject> {
-    let dict = pyo3::types::PyDict::new_bound(py);
+    let dict = pyo3::types::PyDict::new(py);
     dict.set_item("text", &entity.text)?;
     dict.set_item("label", &entity.label)?;
     dict.set_item("start", entity.start)?;
@@ -16,7 +16,7 @@ pub fn entity_to_dict(py: Python, entity: &Entity) -> PyResult<PyObject> {
 
 /// Convert Rust entities to a Python list of dicts
 pub fn entities_to_list(py: Python, entities: &[Entity]) -> PyResult<PyObject> {
-    let list = pyo3::types::PyList::empty_bound(py);
+    let list = pyo3::types::PyList::empty(py);
     for entity in entities {
         let dict = entity_to_dict(py, entity)?;
         list.append(dict)?;
