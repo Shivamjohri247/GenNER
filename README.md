@@ -166,8 +166,8 @@ If you use GenNER in your research, please cite:
 ```bibtex
 @software{genner2024,
   title={GenNER: Generic Named Entity Recognition with SLM Fine-tuning},
-  author={GenNER Contributors},
+  author={Shivam Johri},
   year={2024},
-  url={https://github.com/genner/genner}
+  url={https://github.com/Shivamjohri247/GenNER}
 }
 ```
