@@ -1,0 +1,22 @@
+[package]
+name = "genner-inference"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+genner-core = { path = "../core" }
+genner-models = { path = "../models" }
+thiserror.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+
+# Candle for inference
+candle-core = { workspace = true }
+candle-transformers = { workspace = true }
+candle-nn = { workspace = true }
+half = { workspace = true }

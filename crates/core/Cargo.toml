@@ -1,0 +1,34 @@
+[package]
+name = "genner-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+bincode.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+chrono.workspace = true
+rand.workspace = true
+
+# Optional dependencies for feature flags
+candle-core = { workspace = true, optional = true }
+candle-transformers = { workspace = true, optional = true }
+candle-nn = { workspace = true, optional = true }
+half = { workspace = true, optional = true }
+hnsw = { workspace = true, optional = true }
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[features]
+default = []
+candle = ["candle-core", "candle-transformers", "candle-nn", "half"]
+retrieval = ["hnsw"]
+full = ["candle", "retrieval"]

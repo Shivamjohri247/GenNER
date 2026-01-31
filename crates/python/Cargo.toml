@@ -1,0 +1,25 @@
+[package]
+name = "genner-python"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[lib]
+name = "genner_python"
+crate-type = ["cdylib"]
+
+[dependencies]
+genner-core = { path = "..//core", features = ["candle"] }
+genner-models = { path = "../models" }
+genner-inference = { path = "../inference" }
+thiserror.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread"] }
+
+# PyO3 bindings
+pyo3 = { workspace = true }
+numpy = { workspace = true }
